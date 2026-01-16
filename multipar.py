@@ -18,7 +18,7 @@ from pathlib import Path
 # except:
 #     print("No folder") 
 
-NARRAY = str(49) # number of jobs
+NARRAY = str(99) # number of jobs
 filename = "job"
 
 manual = 0

@@ -67,16 +67,20 @@ trajData = tc.TrajData(par.NSteps) # INITIATE THE TIME DEPENDENT DATA
 
 sim_ti = tm.time()
 for j in range(len(par.μMat_sp)):
-    trajData.intiStateF = par.μMat_id[j,0]
-    trajData.intiStateB = par.μMat_id[j,1]
+    if par.Spectra:
+        trajData.intiStateF = par.μMat_id[j,0]
+        trajData.intiStateB = par.μMat_id[j,1]
+    else:
+        trajData.intiStateF = 1
+        trajData.intiStateB = 1
     ρRe       = np.zeros((par.nData, par.Nt * par.Nt), dtype = np.complex128)                              # DENSITY MATRIX AVERAGED OVER THE NUMBER OF TRAJECTORIES ASSIGNED TO THIS JOB
     for i in range(len(TaskArray)):
         method.RunTraj(trajData)
         ρRe    += trajData.ρRe
     if (parallel == True):
-        np.savetxt(f'../Data/rhoRe_{nrank}_{trajData.intiStateF}_{trajData.intiStateB}.txt', ρRe/len(TaskArray))   # RUN IN PARALLEL
+        np.savetxt(f'../Data/rhoRe_{nrank}_{par.μMat_id[j,0]}_{par.μMat_id[j,1]}.txt', ρRe/len(TaskArray))   # RUN IN PARALLEL
     else:
-        np.savetxt(f'./Data/rhoRe_{nrank}_{trajData.intiStateF}_{trajData.intiStateB}.txt', ρRe/len(TaskArray))    # RUN IN SERIES
+        np.savetxt(f'./Data/rhoRe_{nrank}_{par.μMat_id[j,0]}_{par.μMat_id[j,1]}.txt', ρRe/len(TaskArray))    # RUN IN SERIES
 sim_tf = tm.time()
 t = (sim_tf - sim_ti)
 times = [t, t/60, t/(60*60)]

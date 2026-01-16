@@ -20,7 +20,7 @@ def BathParam(λD, γD, N, num):
     # ANALYTIC DISCRETIZATION OF THE DRUDE - LORENTZ SPECTRAL DENSITY 
     # Huo. P., et al (Mol. Phys. 2012, 110, 1035–1052)
         arr = np.arange(0,N,1) + 1
-        ω_max = 3 * γD #1.30 * γD
+        ω_max = 500 * cm2au #3 * γD #1.30 * γD
         ωj[:] = γD * np.tan(arr/N * np.arctan(ω_max/γD))
         cj[:] = 2 * ωj[:] * np.sqrt(λD * np.arctan(ω_max/γD)/(np.pi * N))
     
@@ -48,9 +48,8 @@ def BathParam(λD, γD, N, num):
 def Hel_cons():
     H  = np.zeros((Nt, Nt), dtype = np.complex128)
     H[0,0]         = 0            # Ground State
-    H[1,1]         = -ϵ + E0          # Cavity
-    H[2,2]         = ϵ + E0            # Cavity
-    H[3,3]         = 0
+    H[1,1]         = ϵ + E0          # Cavity
+    H[2,2]         = -ϵ + E0            # Cavity
     H[1,2], H[2,1] = J12, J12
     return H 
 
@@ -71,11 +70,8 @@ temp   = 300 / autoK
 # =====================================
 NSites     = 2
 M          = 1     # Mass
-Nt         = 4
-Ω          = 30 * cm2au 
-g          = 12.8 * cm2au/(Nt**0.5)
-print('Coupling per molecule -> ', g/cm2au)
-E0         = 1050 * cm2au
+Nt         = 3
+E0         = 1000 * cm2au
 ϵ          = 100 / 2 * cm2au
 J12        = 100 * cm2au
 
@@ -103,10 +99,11 @@ stype      = 0
 ρ0[0,0] = 1
 
 # SIMULATION PARAMETERS ==============================
+Spectra = True
 parallel = True                                          # DO PARALLELIZATION
 # parallel = False                                          # DO PARALLELIZATION
-Cpus     = 50                                              # NUMBER THE CPUS USE FOR PARALLELIZATION
-NTraj    = 500                                          # NUMBER OF TRAJECTORIES
+Cpus     = 100                                              # NUMBER THE CPUS USE FOR PARALLELIZATION
+NTraj    = 200                                          # NUMBER OF TRAJECTORIES
 ntj      = 50
 tf       = 300 * fs2au                                    # SIMULATION TIME IN FEMTOSECONDS
 if parallel == False:
@@ -130,8 +127,8 @@ else :
 
 # BATH PARAMETERS ==============================
 ndof   = 100                                         # NUMBER OF BATH OSCILLATORS
-γD     = 100 * cm2au                                  # BATH CHARACTERISTIC FREQUENCY   
-λD     = 100 * cm2au                                  # BATH REORGANIZATION ENERGY  
+γD     = 18 * cm2au                                  # BATH CHARACTERISTIC FREQUENCY   
+λD     = 50 * cm2au                                  # BATH REORGANIZATION ENERGY  
 num    = False                                      # DISCRETIZATION OF THE SPECTRAL DENSITY | True ⇒ Numerical | False ⇒ Analytical
 ci, ωi = BathParam(λD, γD, ndof, num)               # BATH COUPLINGS AND FREQUENCIES
 cj, ωj = np.tile(ci, 2), np.tile(ωi, 2)

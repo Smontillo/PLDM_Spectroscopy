@@ -24,11 +24,10 @@ def Init_ψ(data):
 @nb.jit(nopython=True)
 def Evolve_ψ(data):
     ψFt, ψBt = data.ψF[:,:].copy(), data.ψB[:,:].copy()
-    VMat     = par.Hel[:,:].copy()
     for k in range(par.ntj):
+        VMat          = par.Hel[:,:].copy()
         VMat[1,1]    += np.sum(par.cj[:par.ndof] * data.R[:par.ndof,k])
         VMat[2,2]    += np.sum(par.cj[par.ndof:] * data.R[par.ndof:,k])
-        # VMat[3,3]    += np.sum(par.cj * data.R[:,k])
         E, U          = np.linalg.eigh(VMat)
         UF            = U @ np.diag(np.exp(1j * par.dtE * E)) @ np.conjugate(U.T)
         UB            = U @ np.diag(np.exp(-1j * par.dtE * E)) @ np.conjugate(U.T)
@@ -42,42 +41,45 @@ def Force1(data):
     ψF_2 = np.absolute(data.ψF)**2
     ψB_2 = np.absolute(data.ψB)**2
     for k in range(par.ntj):
-        data.Force1[:,k] -= par.ωj**2 * data.R[:,k]
-        data.Force1[:par.ndof,k] -= par.cj[:par.ndof] * (ψF_2[1,k] + ψB_2[1,k])/2
-        data.Force1[par.ndof:,k] -= par.cj[par.ndof:] * (ψF_2[2,k] + ψB_2[2,k])/2
-        # data.Force1[:,k]         -= par.cj * np.sum(ψF_2[:,k] + ψB_2[:,k])/2
+        F                = np.zeros((2 * par.ndof), dtype = np.complex128)
+        F               -= par.ωj**2 * data.R[:,k]
+        F[:par.ndof]    -= par.cj[:par.ndof] * (ψF_2[1,k] + ψB_2[1,k])/2
+        F[par.ndof:]    -= par.cj[par.ndof:] * (ψF_2[2,k] + ψB_2[2,k])/2
+        data.Force1[:,k] = F
 # ===================================
 @nb.jit(nopython=True)
 def Force2(data):
     data.Force2[:,:] = 0.0
-    ψF_2 = np.absolute(data.ψF)**2
-    ψB_2 = np.absolute(data.ψB)**2
     for k in range(par.ntj):
-        data.Force2[:,k] -= par.ωj**2 * data.R[:,k]
-        data.Force2[:par.ndof,k] -= par.cj[:par.ndof] * (ψF_2[1,k] + ψB_2[1,k])/2
-        data.Force2[par.ndof:,k] -= par.cj[par.ndof:] * (ψF_2[2,k] + ψB_2[2,k])/2
-        # data.Force2[:,k]         -= par.cj * np.sum(ψF_2[:,k] + ψB_2[:,k])/2
+        ψF_2 = np.conjugate(data.ψF[:,k]) * data.ψF[:,k]
+        ψB_2 = np.conjugate(data.ψB[:,k]) * data.ψB[:,k]
+        F                = np.zeros((2 * par.ndof), dtype = np.complex128)
+        F               -= par.ωj**2 * data.R[:,k]
+        F[:par.ndof]    -= par.cj[:par.ndof] * (ψF_2[1] + ψB_2[1])/2
+        F[par.ndof:]    -= par.cj[par.ndof:] * (ψF_2[2] + ψB_2[2])/2
+        data.Force2[:,k] = F
 # ===================================
 # VELOCITY VERLET
 @nb.jit(nopython=True)
 def VelVerlet(data):
-    data.v[:,:] = data.P[:,:] / par.M * 1.0 
+    data.v[:,:]      = data.P[:,:] / par.M * 1.0 
     # HALF STEP MAPPING
     for t in range(int(par.Estep/2)):
         Evolve_ψ(data)
     # NUCLEAR STEP
-    Force1(data)
-    data.R[:,:]     += par.dtN * data.v + 0.5 * (par.dtN**2/par.M) * data.Force1
+    data.R[:,:]     += par.dtN * data.v[:,:] + 0.5 * (par.dtN**2/par.M) * data.Force1[:,:]
     for t in range(int(par.Estep/2)):
         Evolve_ψ(data)
     Force2(data)
-    data.v[:,:]     += 0.5 * (data.Force1 + data.Force2) * par.dtN / par.M
-    data.P[:,:]      = data.v * par.M
+    data.v[:,:]     += 0.5 * (data.Force1[:,:] + data.Force2[:,:]) * par.dtN / par.M
+    data.P[:,:]      = data.v[:,:] * par.M
+    data.Force1[:,:] = data.Force2[:,:]
 # ===================================
 @nb.jit(nopython=True)
 def RunTraj(data):
     InitBath(data)
     Init_ψ(data)
+    Force1(data)
     data.ρRe[:,:] = 0
     iskip = 0
     # ===================================
