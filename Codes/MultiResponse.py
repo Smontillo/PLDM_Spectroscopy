@@ -1,6 +1,6 @@
 #!/software/anaconda3/2020.11/bin/python
 #SBATCH -p polariton
-#SBATCH -o output_multipar.log
+#SBATCH -o qMultipar.log
 #SBATCH --mem-per-cpu=4GB
 #SBATCH -t 1:00:00
 #SBATCH -N 1
@@ -18,12 +18,13 @@ from pathlib import Path
 # except:
 #     print("No folder") 
 
-NARRAY = str(99) # number of jobs
+NARRAY = (49) # number of jobs
 filename = "job"
 
 manual = 0
 JOBIDnum = 22951491
 ARRAYJOBIDnum = 22951498
+t2 = int(sys.argv[1])
 
 if(manual==1):
     JOBID = str(JOBIDnum)
@@ -31,12 +32,7 @@ if(manual==1):
 else:
     JOBID = str(os.environ["SLURM_JOB_ID"]) # get ID of this job
 
-    Path("tmpdir").mkdir(parents=True, exist_ok=True) # make temporary directory for individual job files
-    os.chdir("tmpdir") # change to temporary directory
-    os.system('cp ../*.py .')
-    os.system('cp ../*.txt .')
-    # os.system('module swap slurm slurm/24.05.0')
-    command = str("sbatch --array [0-" + NARRAY + "] ../runDynamics.sh") # command to submit job array
+    command = f"sbatch --array=0-{NARRAY} runResponse.sh {t2}"
 
     open(filename,'a').close()
 
